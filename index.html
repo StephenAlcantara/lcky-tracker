@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LCKY Token Tracker</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.6.1/dist/web3.min.js"></script>
+    <script src="script.js"></script>
+</head>
+<body>
+    <div class="container">
+        <img src="assets/Lucky Dog Logo.png" alt="Lucky Dog Logo" class="logo">
+        <h2>Total LCKY Burned: <span id="total-burned">Loading...</span></h2>
+        <h2>Percentage of Supply Burned: <span id="percentage-burned">Loading...</span></h2>
+        <h2>Current Tax Wallet Address: <span id="tax-wallet-address">Loading...</span></h2>
+        <h2>Time Since Last Update: <span id="tax-wallet-time">Loading...</span></h2>
+        <span>Note that during periods of high network congestion, 
+            it may take slightly longer than 60 minutes for the smart 
+            contract to assign a new tax wallet</span>
+    </div>
+</body>
+</html>

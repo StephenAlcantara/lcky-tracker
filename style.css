@@ -1,0 +1,83 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background-image: url('Assets/LIVE STREAM WALLPAPER.webp');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    flex-direction: column;
+    padding: 20px;
+}
+
+.logo {
+    width: 120px;
+    max-width: 100%;
+    height: auto;
+}
+
+.container {
+    background-color: rgba(242, 210, 189, 0.8);
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    width: 100%;
+    max-width: 700px;
+}
+
+h2 {
+    font-size: 2rem; /* Increased font size */
+    color: #333;
+    margin-bottom: 25px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+span {
+    font-weight: bold;
+    color: #555;
+    font-size: 1.5rem; /* Increased font size */
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+@media (max-width: 600px) {
+    .container {
+        padding: 15px;
+    }
+
+    h2 {
+        font-size: 1.4rem;
+    }
+
+    span {
+        font-size: 1.1rem;
+    }
+
+    .logo {
+        width: 100px;
+    }
+}
+
+@media (max-width: 400px) {
+    h2 {
+        font-size: 1rem;
+    }
+
+    span {
+        font-size: 0.8rem;
+    }
+
+    .logo {
+        width: 80px;
+    }
+}
