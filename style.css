@@ -1,3 +1,10 @@
+@font-face {
+    font-family: 'chinese rocks rg';
+    src: url('assets/fonts/chinese rocks rg.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -5,7 +12,7 @@
 }
 
 body {
-    font-family: Arial, sans-serif;
+    font-family: chinese rocks rg, sans-serif;
     background-image: url('Assets/LIVE STREAM WALLPAPER.webp');
     background-size: cover;
     background-position: center;
