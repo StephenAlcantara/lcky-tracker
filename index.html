@@ -1,24 +1,140 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LCKY Token Tracker</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/web3@1.6.1/dist/web3.min.js"></script>
-    <script src="script.js"></script>
-</head>
-<body>
-    <div class="container">
-        <img src="Assets/LuckyDogLogo.PNG" alt="Lucky Dog Logo" class="logo">
-        <h2>Total LCKY Burned: <span id="total-burned">Loading...</span></h2>
-        <h2>Percentage of Supply Burned: <span id="percentage-burned">Loading...</span></h2>
-        <h2>Current Tax Wallet Address: <span id="tax-wallet-address">Loading...</span></h2>
-        <h2>Time Since Last Update: <span id="tax-wallet-time">Loading...</span></h2>
-        <span>Note that during periods of high network congestion, 
-            it may take slightly longer than 60 minutes for the smart 
-            contract to assign a new tax wallet</span>
-    </div>
-</body>
-</html>
+const contractAddress = '0x16fF3e371aFF3Ce584B8aFcb8e648B2B06715AE6';
+const web3 = new Web3('https://sepolia-rollup.arbitrum.io/rpc');
+
+const contractABI = [
+    {
+        "inputs": [],
+        "name": "totalSupply",
+        "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "decimals",
+        "outputs": [{ "internalType": "uint8", "name": "", "type": "uint8" }],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "taxWallet3",
+        "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "anonymous": false,
+        "inputs": [{ "indexed": false, "internalType": "address", "name": "newTaxWallet", "type": "address" }],
+        "name": "TaxWalletUpdated",
+        "type": "event"
+    }
+];
+
+const contract = new web3.eth.Contract(contractABI, contractAddress);
+const initialSupply = 888888888888;
+let countdownInterval;
+
+// Ensure the DOM is fully loaded before running the script
+window.onload = () => {
+    initApp();
+};
+
+// Initialize the app
+async function initApp() {
+    try {
+        await assignNewTaxWallet();
+        startDataRefresh();
+    } catch (error) {
+        console.error('Error initializing app:', error);
+    }
+}
+
+async function fetchTotalSupply() {
+    try {
+        const totalSupply = await contract.methods.totalSupply().call();
+        const decimals = await contract.methods.decimals().call();
+        return totalSupply / Math.pow(10, decimals);
+    } catch (error) {
+        console.error('Error fetching total supply:', error);
+    }
+}
+
+async function calculateBurnedTokens() {
+    try {
+        const currentSupply = await fetchTotalSupply();
+        const totalBurned = initialSupply - currentSupply;
+        const percentageBurned = (totalBurned / initialSupply) * 100;
+        return { totalBurned, percentageBurned };
+    } catch (error) {
+        console.error('Error calculating burned tokens:', error);
+    }
+}
+
+async function updateBurnedTokensDisplay() {
+    const { totalBurned, percentageBurned } = await calculateBurnedTokens() || {};
+    document.getElementById('total-burned').innerText = totalBurned.toLocaleString();
+    document.getElementById('percentage-burned').innerText = percentageBurned.toFixed(2) + '%';
+}
+
+async function fetchTaxWalletAddress() {
+    try {
+        return await contract.methods.taxWallet3().call();
+    } catch (error) {
+        console.error('Error fetching tax wallet address:', error);
+    }
+}
+
+async function fetchLastTaxWalletUpdateTime() {
+    try {
+        const events = await contract.getPastEvents('TaxWalletUpdated', {
+            fromBlock: 0,
+            toBlock: 'latest'
+        });
+        if (!events.length) throw new Error('No TaxWalletUpdated events found.');
+
+        const latestEvent = events[events.length - 1];
+        const block = await web3.eth.getBlock(latestEvent.blockNumber);
+        return block.timestamp;
+    } catch (error) {
+        console.error('Error fetching last wallet update time:', error);
+        return null;
+    }
+}
+
+function startCountdown() {
+    const countdownDisplay = document.getElementById('countdown-timer');
+    let timeLeft = 60 * 60; // 60 minutes in seconds
+
+    countdownInterval = setInterval(() => {
+        if (timeLeft <= 0) {
+            clearInterval(countdownInterval);
+            countdownDisplay.innerText = '00:00'; // Stuck at 00:00 if it takes longer
+            return;
+        }
+
+        timeLeft--;
+
+        const minutes = String(Math.floor(timeLeft / 60)).padStart(2, '0');
+        const seconds = String(timeLeft % 60).padStart(2, '0');
+        countdownDisplay.innerText = `${minutes}:${seconds}`;
+    }, 1000);
+}
+
+async function assignNewTaxWallet() {
+    const taxWalletAddress = await fetchTaxWalletAddress();
+    document.getElementById('tax-wallet-address').innerText = taxWalletAddress || 'Error';
+
+    clearInterval(countdownInterval); // Reset the countdown
+    startCountdown(); // Start a new countdown
+}
+
+function startDataRefresh() {
+    updateBurnedTokensDisplay();
+    updateTaxWalletDisplay();
+    setInterval(() => {
+        updateBurnedTokensDisplay();
+        updateTaxWalletDisplay();
+        console.log('Data refreshed');
+    }, 30000);
+}
