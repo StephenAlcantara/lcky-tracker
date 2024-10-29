@@ -1,5 +1,4 @@
 const contractAddress = '0x16fF3e371aFF3Ce584B8aFcb8e648B2B06715AE6';
-const infuraID = 'd7b4a0da4d5844c0a767c010a9cbb8c6';
 const web3 = new Web3('https://sepolia-rollup.arbitrum.io/rpc');
 
 const contractABI = [
@@ -26,18 +25,7 @@ const contractABI = [
     },
     {
         "anonymous": false,
-        "inputs": [
-            { "indexed": true, "internalType": "address", "name": "previousOwner", "type": "address" },
-            { "indexed": true, "internalType": "address", "name": "newOwner", "type": "address" }
-        ],
-        "name": "OwnershipTransferred",
-        "type": "event"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            { "indexed": false, "internalType": "address", "name": "newTaxWallet", "type": "address" }
-        ],
+        "inputs": [{ "indexed": false, "internalType": "address", "name": "newTaxWallet", "type": "address" }],
         "name": "TaxWalletUpdated",
         "type": "event"
     }
@@ -45,6 +33,22 @@ const contractABI = [
 
 const contract = new web3.eth.Contract(contractABI, contractAddress);
 const initialSupply = 888888888888;
+let countdownInterval;
+
+// Ensure the DOM is fully loaded before running the script
+window.onload = () => {
+    initApp();
+};
+
+// Initialize the app
+async function initApp() {
+    try {
+        await assignNewTaxWallet();
+        startDataRefresh();
+    } catch (error) {
+        console.error('Error initializing app:', error);
+    }
+}
 
 async function fetchTotalSupply() {
     try {
@@ -98,28 +102,31 @@ async function fetchLastTaxWalletUpdateTime() {
     }
 }
 
-function formatTimeElapsed(timestamp) {
-    if (!timestamp) return 'No recent updates';
+function startCountdown() {
+    const countdownDisplay = document.getElementById('countdown-timer');
+    let timeLeft = 60 * 60;
 
-    const currentTime = Math.floor(Date.now() / 1000);
-    const elapsed = currentTime - timestamp;
+    countdownInterval = setInterval(() => {
+        if (timeLeft <= 0) {
+            clearInterval(countdownInterval);
+            countdownDisplay.innerText = '00:00';
+            return;
+        }
 
-    const days = Math.floor(elapsed / 86400);
-    const hours = Math.floor((elapsed % 86400) / 3600);
-    const minutes = Math.floor((elapsed % 3600) / 60);
+        timeLeft--;
 
-    if (days > 0) return `${days} days ago`;
-    if (hours > 0) return `${hours} hours ago`;
-    return `${minutes} minutes ago`;
+        const minutes = String(Math.floor(timeLeft / 60)).padStart(2, '0');
+        const seconds = String(timeLeft % 60).padStart(2, '0');
+        countdownDisplay.innerText = `${minutes}:${seconds}`;
+    }, 1000);
 }
 
-async function updateTaxWalletDisplay() {
+async function assignNewTaxWallet() {
     const taxWalletAddress = await fetchTaxWalletAddress();
-    const lastUpdateTime = await fetchLastTaxWalletUpdateTime();
-    const timeElapsed = formatTimeElapsed(lastUpdateTime);
-
     document.getElementById('tax-wallet-address').innerText = taxWalletAddress || 'Error';
-    document.getElementById('tax-wallet-time').innerText = timeElapsed || 'Error';
+
+    clearInterval(countdownInterval);
+    startCountdown();
 }
 
 function startDataRefresh() {
@@ -128,9 +135,6 @@ function startDataRefresh() {
     setInterval(() => {
         updateBurnedTokensDisplay();
         updateTaxWalletDisplay();
-        console.log('Refreshed');
+        console.log('Data refreshed');
     }, 30000);
-    console.log('Initial');
 }
-
-window.onload = startDataRefresh;
