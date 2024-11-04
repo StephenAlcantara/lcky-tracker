@@ -1,6 +1,5 @@
-const contractAddress = '0x16fF3e371aFF3Ce584B8aFcb8e648B2B06715AE6';
-const web3 = new Web3('https://sepolia-rollup.arbitrum.io/rpc');
-
+const contractAddress = '0xE7f28C53AC90fE9A196327BC6AD1C1a687701089';
+const provider = new ethers.providers.InfuraProvider('mainnet', 'd7b4a0da4d5844c0a767c010a9cbb8c6');  // Replace with your Infura Project ID
 const contractABI = [
     {
         "inputs": [],
@@ -25,14 +24,14 @@ const contractABI = [
     },
     {
         "anonymous": false,
-        "inputs": [{ "indexed": false, "internalType": "address", "name": "newTaxWallet", "type": "address" }],
+        "inputs": [{ "indexed": true, "internalType": "address", "name": "newTaxWallet", "type": "address" }],
         "name": "TaxWalletUpdated",
         "type": "event"
     }
 ];
 
-const contract = new web3.eth.Contract(contractABI, contractAddress);
-const initialSupply = 888888888888;
+const contract = new ethers.Contract(contractAddress, contractABI, provider);
+const initialSupply = 888888888888;  // Initial supply
 let countdownInterval;
 
 // Ensure the DOM is fully loaded before running the script
@@ -50,16 +49,18 @@ async function initApp() {
     }
 }
 
+// Fetch total supply
 async function fetchTotalSupply() {
     try {
-        const totalSupply = await contract.methods.totalSupply().call();
-        const decimals = await contract.methods.decimals().call();
+        const totalSupply = await contract.totalSupply();
+        const decimals = await contract.decimals();
         return totalSupply / Math.pow(10, decimals);
     } catch (error) {
         console.error('Error fetching total supply:', error);
     }
 }
 
+// Calculate burned tokens and percentage
 async function calculateBurnedTokens() {
     try {
         const currentSupply = await fetchTotalSupply();
@@ -71,37 +72,24 @@ async function calculateBurnedTokens() {
     }
 }
 
+// Update displayed burned tokens
 async function updateBurnedTokensDisplay() {
     const { totalBurned, percentageBurned } = await calculateBurnedTokens() || {};
     document.getElementById('total-burned').innerText = totalBurned.toLocaleString();
     document.getElementById('percentage-burned').innerText = percentageBurned.toFixed(2) + '%';
 }
 
+// Fetch tax wallet address with error handling
 async function fetchTaxWalletAddress() {
     try {
-        return await contract.methods.taxWallet3().call();
+        return await contract.taxWallet3();
     } catch (error) {
         console.error('Error fetching tax wallet address:', error);
+        return 'Unavailable';
     }
 }
 
-async function fetchLastTaxWalletUpdateTime() {
-    try {
-        const events = await contract.getPastEvents('TaxWalletUpdated', {
-            fromBlock: 0,
-            toBlock: 'latest'
-        });
-        if (!events.length) throw new Error('No TaxWalletUpdated events found.');
-
-        const latestEvent = events[events.length - 1];
-        const block = await web3.eth.getBlock(latestEvent.blockNumber);
-        return block.timestamp;
-    } catch (error) {
-        console.error('Error fetching last wallet update time:', error);
-        return null;
-    }
-}
-
+// Start a countdown for the next wallet update
 function startCountdown() {
     const countdownDisplay = document.getElementById('countdown-timer');
     let timeLeft = 60 * 60;
@@ -114,27 +102,28 @@ function startCountdown() {
         }
 
         timeLeft--;
-
         const minutes = String(Math.floor(timeLeft / 60)).padStart(2, '0');
         const seconds = String(timeLeft % 60).padStart(2, '0');
         countdownDisplay.innerText = `${minutes}:${seconds}`;
     }, 1000);
 }
 
+// Polling-based wallet assignment due to potential lack of event
 async function assignNewTaxWallet() {
     const taxWalletAddress = await fetchTaxWalletAddress();
-    document.getElementById('tax-wallet-address').innerText = taxWalletAddress || 'Error';
+    document.getElementById('tax-wallet-address').innerText = taxWalletAddress;
 
     clearInterval(countdownInterval);
     startCountdown();
 }
 
+// Refresh data at a set interval, using polling for tax wallet address
 function startDataRefresh() {
     updateBurnedTokensDisplay();
-    updateTaxWalletDisplay();
+    assignNewTaxWallet();
     setInterval(() => {
         updateBurnedTokensDisplay();
-        updateTaxWalletDisplay();
+        assignNewTaxWallet();
         console.log('Data refreshed');
     }, 30000);
 }
