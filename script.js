@@ -1,5 +1,5 @@
 const contractAddress = '0xE7f28C53AC90fE9A196327BC6AD1C1a687701089';
-const provider = new ethers.providers.InfuraProvider('mainnet', 'd7b4a0da4d5844c0a767c010a9cbb8c6');
+const provider = new ethers.providers.InfuraProvider('mainnet', '24e81a397e5147db8bbf200a66c0e1c3');
 const contractABI = [
       {
           "inputs": [
